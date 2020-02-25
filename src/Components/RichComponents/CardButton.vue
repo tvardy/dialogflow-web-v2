@@ -9,7 +9,7 @@
 .card-button
     text-decoration: none
     line-height: 24px
-    color: var(--accent)
+    color: var(--text-quaternary)
     border: 1px solid var(--border)
     border-radius: 40px
     display: block

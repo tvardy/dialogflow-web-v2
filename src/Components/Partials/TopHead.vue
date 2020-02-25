@@ -22,8 +22,8 @@
 
     .app-icon
         border-radius: 8px
-        width: 30px
-        height: 30px
+        width: 36px
+        height: 36px
         object-fit: cover
         background-color: var(--image-background)
 
@@ -46,7 +46,7 @@
 
 .audio-toggle
     @include reset
-    display: flex
+    display: none
     position: fixed
     top: 0
     right: 0

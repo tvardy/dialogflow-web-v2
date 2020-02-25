@@ -5,16 +5,16 @@
 <style lang="sass" scoped>
 .bubble
     padding: 12px
-    border-radius: 40px
-    color: var(--text)
+    border-radius: 20px
+    color: var(--text-white)
     border: 1px solid var(--border)
     display: inline-block
     position: relative
-    background-color: var(--background)
+    background-color: var(--background-secondary)
     min-width: 26px
 
     &::before
-        content: var(--left-bubble)
+        content: var(--left-bubble_blue)
         position: absolute
         left: 0
         top: 0
@@ -22,15 +22,15 @@
         margin-left: -1px
 
     &.me
-        background-color: var(--element-background)
-        border: 1px solid var(--element-background)
-        color: var(--text-secondary)
+        background-color: var(--element-background-secondary)
+        border: 1px solid var(--element-background-secondary)
+        color: var(--text-tertiary)
 
         &::before
             content: ''
 
         &::after
-            content: var(--right-bubble)
+            content: var(--right-bubble_gray)
             position: absolute
             right: 0
             top: 0
