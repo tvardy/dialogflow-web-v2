@@ -12,9 +12,10 @@
     position: relative
     background-color: var(--background-secondary)
     min-width: 26px
+    border-top-left-radius: 0px
 
     &::before
-        content: var(--left-bubble_blue)
+        content: var(--left-bubble)
         position: absolute
         left: 0
         top: 0
@@ -25,12 +26,13 @@
         background-color: var(--element-background-secondary)
         border: 1px solid var(--element-background-secondary)
         color: var(--text-tertiary)
+        border-top-left-radius: 20px
 
         &::before
             content: ''
 
         &::after
-            content: var(--right-bubble_gray)
+            content: var(--right-bubble)
             position: absolute
             right: 0
             top: 0

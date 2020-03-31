@@ -11,7 +11,7 @@
 </template>
 
 <style lang="sass" scoped>
-@import '@/Components/App/Mixins'
+@import '@/Style/Mixins'
 
 .suggestion
     @include reset
@@ -26,11 +26,7 @@
     margin-bottom: 12px
 
 .suggestion[href]
-    background: var(--background-secondary)
-    box-shadow: 0 3px 6px 2px rgba(66,133,244,0.15)
-    color: white
     text-decoration: none
-    border: 1px solid var(--background-secondary)
 </style>
 
 <script>

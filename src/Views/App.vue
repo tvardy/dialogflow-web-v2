@@ -5,8 +5,8 @@
             <!-- Audio toggle (on the top right corner), used to toggle the audio output, default mode is defined in the settings -->
             <button
                 class="audio-toggle"
-                :title="muted ? (config.i18n[lang()] && config.i18n[lang()].unMuteTitle) || config.i18n[config.app.fallback_lang].unMuteTitle : (config.i18n[lang()] && config.i18n[lang()].muteTitle) || config.i18n[config.app.fallback_lang].muteTitle"
-                :aria-label="muted ? (config.i18n[lang()] && config.i18n[lang()].unMuteTitle) || config.i18n[config.app.fallback_lang].unMuteTitle : (config.i18n[lang()] && config.i18n[lang()].muteTitle) || config.i18n[config.app.fallback_lang].muteTitle"
+                :title="muted ? (translations[lang()] && translations[lang()].unMuteTitle) || translations[config.fallback_lang].unMuteTitle : (translations[lang()] && translations[lang()].muteTitle) || translations[config.fallback_lang].muteTitle"
+                :aria-label="muted ? (translations[lang()] && translations[lang()].unMuteTitle) || translations[config.fallback_lang].unMuteTitle : (translations[lang()] && translations[lang()].muteTitle) || translations[config.fallback_lang].muteTitle"
                 @click="muted = !muted">
                 <i aria-hidden="true" class="material-icons">{{muted ? 'volume_off': 'volume_up'}}</i>
             </button>
@@ -20,12 +20,12 @@
 
             <!-- Messages Table -->
             <section v-else aria-live="polite">
-                <div v-for="m in messages" :key="m.responseId" class="message">
+                <div v-for="m in messages" id="message" :key="m.responseId">
                     <!-- My message -->
-                    <BubbleWrapper><Bubble me :text="m.queryResult.queryText" /></BubbleWrapper>
+                    <BubbleWrapper><Bubble v-if="m.queryResult.queryText" :text="m.queryResult.queryText" me /></BubbleWrapper>
 
                     <!-- Dialogflow Components -->
-                    <div v-for="(component, id) in m.queryResult.fulfillmentMessages" :key="id" class="component">
+                    <RichComponent v-for="(component, id) in m.queryResult.fulfillmentMessages" :key="id">
                         <!-- Text (https://cloud.google.com/dialogflow/docs/reference/rest/v2beta1/projects.agent.intents#Text) -->
                         <Bubble v-if="component.text" :text="component.text.text[0]" />
 
@@ -96,11 +96,11 @@
 
                         <!-- Image (https://cloud.google.com/dialogflow/docs/reference/rest/v2beta1/projects.agent.intents#Image) -->
                         <Picture v-if="component.image" :uri="component.image.imageUri" :title="component.image.accessibilityText" />
-                    </div>
+                    </RichComponent>
 
                     <!-- Actions on Google Components -->
                     <section v-if="m.queryResult.webhookPayload && m.queryResult.webhookPayload.google">
-                        <div v-for="(component, id) in m.queryResult.webhookPayload.google.richResponse.items" :key="id" class="component">
+                        <RichComponent v-for="(component, id) in m.queryResult.webhookPayload.google.richResponse.items" :key="id">
                             <!-- Simple response (https://developers.google.com/actions/assistant/responses#simple_response) -->
                             <Bubble
                                 v-if="component.simpleResponse"
@@ -166,10 +166,10 @@
                                     :title="button.title"
                                 />
                             </TableCard>
-                        </div>
+                        </RichComponent>
 
                         <!-- Visual Selection Responses (https://developers.google.com/actions/assistant/responses#visual_selection_responses) -->
-                        <div v-for="(component, id) in m.queryResult.webhookPayload.google.systemIntent" :key="id" class="component">
+                        <RichComponent v-for="(component, id) in m.queryResult.webhookPayload.google.systemIntent" :key="id">
                             <!-- List (https://developers.google.com/actions/assistant/responses#list) -->
                             <List
                                 v-if="component.listSelect"
@@ -198,10 +198,10 @@
                                     @click.native="send({text: item.optionInfo.key})"
                                 />
                             </Carousel>
-                        </div>
+                        </RichComponent>
                     </section>
                 </div>
-                <div v-if="loading" class="message">
+                <div v-if="loading" id="message">
                     <!-- My message (Loading) -->
                     <BubbleWrapper><Bubble me loading aria-hidden="true" /></BubbleWrapper>
 
@@ -212,7 +212,7 @@
         </section>
 
         <!-- ChatInput is made for submitting queries and displaying suggestions -->
-        <ChatInput @submit="send">
+        <ChatInput ref="input" @submit="send">
             <!-- Suggestion chips
                 https://developers.google.com/actions/assistant/responses#suggestion_chips
                 https://cloud.google.com/dialogflow/docs/reference/rest/v2beta1/projects.agent.intents#QuickReplies
@@ -241,60 +241,52 @@
 </template>
 
 <style lang="sass">
-@import url('https://fonts.googleapis.com/css?family=Roboto:400,500,700')
-@import url('https://fonts.googleapis.com/css?family=Material+Icons')
+    @import '@/Style/Theme.sass'
 
-body
-    margin: 0
-    padding: 0
-    font-family: var(--font)
-    font-display: swap
-    background-color: var(--background)
+    body
+        margin: 0
+        padding: 0
+        font-family: var(--font)
+        font-display: swap
+        background-color: var(--background)
 
-.container
-    max-width: 500px
-    margin-left: auto
-    margin-right: auto
-    padding: 16px
-    position: relative
+    .container
+        max-width: 500px
+        margin-left: auto
+        margin-right: auto
+        padding: 16px
+        position: relative
 </style>
 
 <style lang="sass" scoped>
-.chat-container
-    padding-top: 80px
-    padding-bottom: 125px
-
-.message
-    .component
-        padding-bottom: 10px
-        width: 70%
-
-        @media screen and (max-width: 720px)
-            width: 100%
+    .chat-container
+        padding-top: 80px
+        padding-bottom: 125px
 </style>
 
 <script>
-import Welcome from '@/Components/Welcome/Welcome.vue'
-import Error from '@/Components/Error/Error.vue'
-import TopHead from '@/Components/Partials/TopHead.vue'
-import ChatInput from '@/Components/Partials/ChatInput.vue'
+import Welcome from './Welcome.vue'
 
-import Bubble from '@/Components/RichComponents/Bubble.vue'
-import BubbleWrapper from '@/Components/RichComponents/BubbleWrapper.vue'
-import Card from '@/Components/RichComponents/Card.vue'
-import CardButton from '@/Components/RichComponents/CardButton.vue'
-import Carousel from '@/Components/RichComponents/Carousel.vue'
-import List from '@/Components/RichComponents/List.vue'
-import ListItem from '@/Components/RichComponents/ListItem.vue'
-import Picture from '@/Components/RichComponents/Picture.vue'
-import Media from '@/Components/RichComponents/Media.vue'
-import TableCard from '@/Components/RichComponents/TableCard.vue'
-import Suggestion from '@/Components/RichComponents/Suggestion.vue'
+import Error from '@/Components/Parts/Error.vue'
+import TopHead from '@/Components/Parts/TopHead.vue'
+import ChatInput from '@/Components/Parts/ChatInput.vue'
+
+import RichComponent from '@/Components/Rich/Component.vue'
+import Bubble from '@/Components/Rich/Bubble.vue'
+import BubbleWrapper from '@/Components/Rich/BubbleWrapper.vue'
+import Card from '@/Components/Rich/Card.vue'
+import CardButton from '@/Components/Rich/CardButton.vue'
+import Carousel from '@/Components/Rich/Carousel.vue'
+import List from '@/Components/Rich/List.vue'
+import ListItem from '@/Components/Rich/ListItem.vue'
+import Picture from '@/Components/Rich/Picture.vue'
+import Media from '@/Components/Rich/Media.vue'
+import TableCard from '@/Components/Rich/TableCard.vue'
+import Suggestion from '@/Components/Rich/Suggestion.vue'
 
 import * as uuidv1 from 'uuid/v1'
 
 import 'dialogflow-gateway/build/bundle'
-import './Theme.sass'
 
 export default {
     name: 'App',
@@ -303,6 +295,7 @@ export default {
         Error,
         TopHead,
         ChatInput,
+        RichComponent,
         Bubble,
         BubbleWrapper,
         Card,
@@ -321,10 +314,10 @@ export default {
             messages: [],
             language: '',
             session: '',
-            muted: this.config.app.muted,
+            muted: this.config.muted,
             loading: false,
             error: null,
-            client: new df.Client(this.config.app.gateway).connect()
+            client: new df.Client(this.config.gateway).connect()
         }
     },
     computed: {
@@ -353,52 +346,48 @@ export default {
             }
 
             return {
-                text_suggestions: this.config.app.start_suggestions // <- if no messages are present, return start_suggestions, from config.js to help user figure out what he can do with your application
+                text_suggestions: this.config.start_suggestions // <- if no messages are present, return start_suggestions, from config.js to help user figure out what he can do with your application
             }
         }
     },
     watch: {
         /* This function is triggered, when new messages arrive */
         messages(messages){
-            if (this.history()) localStorage.setItem('message_history', JSON.stringify(messages)) // <- Save history if the feature is enabled
+            if (this.history()) sessionStorage.setItem('message_history', JSON.stringify(messages)) // <- Save history if the feature is enabled
         },
         /* This function is triggered, when request is started or finished */
         loading(){
             setTimeout(() => {
                 const app = document.querySelector('#app') // <- We need to scroll down #app, to prevent the whole page jumping to bottom, when using in iframe
-                if (app.querySelector('.message')){
-                    const message = app.querySelectorAll('.message')[app.querySelectorAll('.message').length - 1].offsetTop - 70
+                if (app.querySelector('#message')){
+                    const message = app.querySelectorAll('#message')[app.querySelectorAll('#message').length - 1].offsetTop - 68
                     window.scrollTo({top: message, behavior: 'smooth'})
                 }
             }, 2) // <- wait for render (timeout) and then smoothly scroll #app down to the last message
         }
     },
     created(){
-        /* If history is enabled, the messages are retrieved from localStorage */
-        if (this.history() && localStorage.getItem('message_history') !== null){
-            this.messages = JSON.parse(localStorage.getItem('message_history'))
+        /* If history is enabled, the messages are retrieved from sessionStorage */
+        if (this.history() && sessionStorage.getItem('message_history') !== null){
+            this.messages = JSON.parse(sessionStorage.getItem('message_history'))
         }
 
         /* Session should be persistent (in case of page reload, the context should stay) */
-        if (this.history() && localStorage.getItem('session') !== null){
-            this.session = localStorage.getItem('session')
-        }
-
-        else {
+        if (this.history() && sessionStorage.getItem('session') !== null){
+            this.session = sessionStorage.getItem('session')
+        } else {
             this.session = uuidv1()
-            if (this.history()) localStorage.setItem('session', this.session)
+            if (this.history()) sessionStorage.setItem('session', this.session)
         }
 
         /* Cache Agent (this will save bandwith) */
-        if (this.history() && localStorage.getItem('agent') !== null){
-            this.app = JSON.parse(localStorage.getItem('agent'))
-        }
-
-        else {
+        if (this.history() && sessionStorage.getItem('agent') !== null){
+            this.app = JSON.parse(sessionStorage.getItem('agent'))
+        } else {
             this.client.get()
             .then(agent => {
                 this.app = agent
-                if (this.history()) localStorage.setItem('agent', JSON.stringify(agent))
+                if (this.history()) sessionStorage.setItem('agent', JSON.stringify(agent))
             })
             .catch(error => {
                 this.error = error.message
@@ -455,10 +444,10 @@ export default {
             /* This function is used for speech output */
             if (response.outputAudio){
                 const output = new Audio(`data:audio/mp3;base64,${response.outputAudio}`)
-                if (!this.muted) output.play()
-            }
+                output.onended = () => this.$refs.input.listen()
 
-            else {
+                if (!this.muted) output.play()
+            } else {
                 let text // <- init a text variable
 
                 /* Dialogflow Text/SimpleResponses */
@@ -475,7 +464,7 @@ export default {
                 }
 
                 const speech = new SpeechSynthesisUtterance(text)
-                speech.voiceURI = this.config.app.voice
+                speech.voiceURI = this.config.voice
 
                 /* This "hack" is used to format our lang format, to some other lang format (example: en -> en_EN). Mainly for Safari, Firefox and Edge */
                 speech.lang = `${this.lang()}-${this.lang().toUpperCase()}`
